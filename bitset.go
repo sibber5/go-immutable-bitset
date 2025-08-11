@@ -1,6 +1,9 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2025 sibber (GitHub: sibber5)
+
 package bitset
 
-// bitset.Set is immutable.
+// bitset.Set is an immutable bit set.
 type Set interface {
 	// Has reports whether the bit for the given bit index is set.
 	Has(bitIndex uint32) bool
@@ -14,13 +17,24 @@ type Set interface {
 	Remove(bitIndex uint32) Set
 }
 
+// New creates and returns a new empty bitset.Set.
 func New() Set {
 	return bitSet64(0)
 }
 
+// bitset.Builder provides a mutable interface for efficiently constructing a bitset
+// by setting the bits before creating the final immutable Set.
+//
+// WARNING: Using the builder instance after calling Build() is not supported and will cause undefined behavior.
 type Builder interface {
+	// With returns a new Builder with the bit for the given bit index set.
 	With(bitIndex uint32) Builder
-	WithMany(bitIndecies ...uint32) Builder
+
+	// WithMany returns a new Builder with all the bits for the given bit indices set.
+	WithMany(bitIndices ...uint32) Builder
+
+	// Build returns the final immutable Set containing all the bits set on this Builder.
+	// Using the builder instance after calling Build() is not supported and will cause undefined behavior.
 	Build() Set
 }
 
@@ -35,9 +49,9 @@ func (b bitSet64) With(bitIndex uint32) Builder {
 	return bitSetBuilder(s.(largeBitSet))
 }
 
-func (b bitSet64) WithMany(bitIndecies ...uint32) Builder {
+func (b bitSet64) WithMany(bitIndices ...uint32) Builder {
 	var bld Builder = b
-	for _, i := range bitIndecies {
+	for _, i := range bitIndices {
 		bld = bld.With(i)
 	}
 	return bld
@@ -57,9 +71,9 @@ func (b bitSetBuilder) With(bitIndex uint32) Builder {
 	return bitSetBuilder(largeBitSet(b).Add(bitIndex).(largeBitSet))
 }
 
-func (b bitSetBuilder) WithMany(bitIndecies ...uint32) Builder {
+func (b bitSetBuilder) WithMany(bitIndices ...uint32) Builder {
 	var bld Builder = b
-	for _, i := range bitIndecies {
+	for _, i := range bitIndices {
 		bld = bld.With(i)
 	}
 	return bld
@@ -69,6 +83,8 @@ func (b bitSetBuilder) Build() Set {
 	return largeBitSet(b)
 }
 
+// NewBuilder creates and returns a new bitset.Builder with an initial bit capacity of at least minCapacity.
+// You can set bits beyond this capacity and the builder will expand automatically.
 func NewBuilder(minCapacity int) Builder {
 	if minCapacity <= 64 {
 		return bitSet64(0)
@@ -111,7 +127,7 @@ func (b bitSet64) Remove(bitIndex uint32) Set {
 }
 
 // Large (>64 bits)
-type largeBitSet []uint64 // immutable — always copied on modification
+type largeBitSet []uint64 // immutable - always copied on modification
 
 func (b largeBitSet) Has(bitIndex uint32) bool {
 	idx := int(bitIndex / 64)
