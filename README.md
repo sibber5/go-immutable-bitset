@@ -13,19 +13,21 @@ go get github.com/sibber5/go-immutable-bitset
 ### Basic Operations
 
 ```go
+import "github.com/sibber5/go-immutable-bitset/bitset"
+
 // Create a new empty bitset
 bs := bitset.New()
 
 // Set bits (returns a new bitset)
-bs = bs.Add(42).Add(17)
+bs = bs.Set(42).Set(17)
 
 // Check if a bit is set
-if bs.Has(42) {
+if bs.Test(42) {
     fmt.Println("Bit at index 42 is set")
 }
 
 // Clear a bit (returns a new bitset)
-bs := bs.Remove(42)
+bs := bs.Clear(42)
 ```
 
 ### Builder Pattern
@@ -50,9 +52,9 @@ bs := builder.
 The bitset automatically optimizes its internal representation:
 
 - **Small bitsets (≤64 bits)**: Uses a single `uint64` allocated inline
-- **Large bitsets (>64 bits)**: Uses a slice of `uint64` with automatic growth and shrinking, optimized for infrequent `Remove`s
+- **Large bitsets (>64 bits)**: Uses a slice of `uint64` with automatic growth and shrinking, optimized for infrequent `Clear`s
 
-`Has` is always O(1). For small bitsets with <=64 bits, `Add` (as long as `butIndex` is <64) and `Remove` are also O(1), otherwise they run in O(n) worse case (where n is len(slice)).
+`Test` is always O(1). For small bitsets with <=64 bits, `Set` (as long as `bitIndex` is <64) and `Clear` are also O(1), otherwise they run in O(n) worse case (where n is len(slice)).
 
 ## Thread Safety
 

@@ -5,16 +5,16 @@ package bitset
 
 // bitset.Set is an immutable bit set.
 type Set interface {
-	// Has reports whether the bit for the given bit index is set.
-	Has(bitIndex uint32) bool
+	// Test reports whether the bit for the given bit index is set.
+	Test(bitIndex uint32) bool
 
-	// Add returns a new bitset.Set with the bit for the given bit index set.
+	// Set returns a new bitset.Set with the bit for the given bit index set.
 	// The original bitset.Set is not modified.
-	Add(bitIndex uint32) Set
+	Set(bitIndex uint32) Set
 
-	// Remove returns a new bitset.Set with the bit for the given bit index cleared.
+	// Clear returns a new bitset.Set with the bit for the given bit index cleared.
 	// The original bitset.Set is not modified.
-	Remove(bitIndex uint32) Set
+	Clear(bitIndex uint32) Set
 }
 
 // New creates and returns a new empty bitset.Set.
@@ -41,7 +41,7 @@ type Builder interface {
 type bitSetBuilder []uint64
 
 func (b bitSet64) With(bitIndex uint32) Builder {
-	s := b.Add(bitIndex)
+	s := b.Set(bitIndex)
 	if bitIndex < 64 {
 		return s.(bitSet64)
 	}
@@ -68,7 +68,7 @@ func (b bitSetBuilder) With(bitIndex uint32) Builder {
 		return b
 	}
 
-	return bitSetBuilder(largeBitSet(b).Add(bitIndex).(largeBitSet))
+	return bitSetBuilder(largeBitSet(b).Set(bitIndex).(largeBitSet))
 }
 
 func (b bitSetBuilder) WithMany(bitIndices ...uint32) Builder {
@@ -97,7 +97,7 @@ func NewBuilder(minCapacity int) Builder {
 // Small (≤64 bits)
 type bitSet64 uint64
 
-func (b bitSet64) Has(bitIndex uint32) bool {
+func (b bitSet64) Test(bitIndex uint32) bool {
 	if bitIndex >= 64 {
 		return false
 	}
@@ -105,7 +105,7 @@ func (b bitSet64) Has(bitIndex uint32) bool {
 	return b&(1<<bitIndex) != 0
 }
 
-func (b bitSet64) Add(bitIndex uint32) Set {
+func (b bitSet64) Set(bitIndex uint32) Set {
 	if bitIndex < 64 {
 		return b | (1 << bitIndex)
 	}
@@ -118,7 +118,7 @@ func (b bitSet64) Add(bitIndex uint32) Set {
 	return largeBitSet(newBits)
 }
 
-func (b bitSet64) Remove(bitIndex uint32) Set {
+func (b bitSet64) Clear(bitIndex uint32) Set {
 	if bitIndex >= 64 {
 		return b
 	}
@@ -129,7 +129,7 @@ func (b bitSet64) Remove(bitIndex uint32) Set {
 // Large (>64 bits)
 type largeBitSet []uint64 // immutable - always copied on modification
 
-func (b largeBitSet) Has(bitIndex uint32) bool {
+func (b largeBitSet) Test(bitIndex uint32) bool {
 	idx := int(bitIndex / 64)
 	if idx >= len(b) {
 		return false
@@ -138,7 +138,7 @@ func (b largeBitSet) Has(bitIndex uint32) bool {
 	return b[idx]&(1<<(bitIndex%64)) != 0
 }
 
-func (b largeBitSet) Add(bitIndex uint32) Set {
+func (b largeBitSet) Set(bitIndex uint32) Set {
 	idx := int(bitIndex / 64)
 	newBits := make([]uint64, max(len(b), idx+1))
 	copy(newBits, b)
@@ -146,7 +146,7 @@ func (b largeBitSet) Add(bitIndex uint32) Set {
 	return largeBitSet(newBits)
 }
 
-func (b largeBitSet) Remove(bitIndex uint32) Set {
+func (b largeBitSet) Clear(bitIndex uint32) Set {
 	idx := int(bitIndex / 64)
 	if idx >= len(b) {
 		return b

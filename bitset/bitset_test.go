@@ -14,132 +14,132 @@ func TestBitSet64(t *testing.T) {
 		t.Error("NewBitSet should be empty")
 	}
 
-	// Test immutability on Add
-	bs2 := bs.Add(5)
-	if bs.Has(5) {
-		t.Error("Original bitSet64 should not be modified after Add")
+	// Test immutability on Set
+	bs2 := bs.Set(5)
+	if bs.Test(5) {
+		t.Error("Original bitSet64 should not be modified after Set")
 	}
-	if !bs2.Has(5) {
-		t.Error("New bitSet64 should have the added bit")
-	}
-
-	// Test immutability on Remove
-	bs3 := bs2.Remove(5)
-	if !bs2.Has(5) {
-		t.Error("Original bitSet64 should not be modified after Remove")
-	}
-	if bs3.Has(5) {
-		t.Error("New bitSet64 should not have the removed bit")
+	if !bs2.Test(5) {
+		t.Error("New bitSet64 should have the set bit")
 	}
 
-	// Test adding an existing bit
-	bs4 := bs2.Add(5)
-	if !bs4.Has(5) {
-		t.Error("Adding an existing bit should not remove it")
+	// Test immutability on Clear
+	bs3 := bs2.Clear(5)
+	if !bs2.Test(5) {
+		t.Error("Original bitSet64 should not be modified after Clear")
+	}
+	if bs3.Test(5) {
+		t.Error("New bitSet64 should not have the cleared bit")
+	}
+
+	// Test setting an existing bit
+	bs4 := bs2.Set(5)
+	if !bs4.Test(5) {
+		t.Error("Setting an existing bit should not clear it")
 	}
 
 	// Test removing a non-existent bit
-	bs5 := bs2.Remove(10)
-	if !bs5.Has(5) {
+	bs5 := bs2.Clear(10)
+	if !bs5.Test(5) {
 		t.Error("Removing a non-existent bit should not affect existing bits")
 	}
 
 	// Test removing bit >= 64 is a no-op
-	bs6 := bs2.Remove(100)
-	if !bs6.Has(5) {
+	bs6 := bs2.Clear(100)
+	if !bs6.Test(5) {
 		t.Error("Removing a high bit from bitSet64 should be a no-op")
 	}
 }
 
 func TestBitSetUpgradeAndDowngrade(t *testing.T) {
 	var bs Set = New()
-	bs = bs.Add(10)
+	bs = bs.Set(10)
 
 	// Upgrade to largeBitSet
-	largeBs := bs.Add(100)
+	largeBs := bs.Set(100)
 
 	if _, ok := largeBs.(largeBitSet); !ok {
 		t.Fatalf("BitSet should have upgraded to largeBitSet, but got %T", largeBs)
 	}
 
-	if !largeBs.Has(10) {
+	if !largeBs.Test(10) {
 		t.Error("Upgraded set should retain old bits")
 	}
-	if !largeBs.Has(100) {
+	if !largeBs.Test(100) {
 		t.Error("Upgraded set should have the new bit")
 	}
 
 	// Test immutability during upgrade
-	if bs.Has(100) {
+	if bs.Test(100) {
 		t.Error("Original bitSet64 should not be modified during upgrade")
 	}
 
 	// Downgrade back to bitSet64
-	downgradedBs := largeBs.Remove(100)
+	downgradedBs := largeBs.Clear(100)
 	if _, ok := downgradedBs.(bitSet64); !ok {
 		t.Fatalf("Set should have downgraded to bitSet64, but got %T", downgradedBs)
 	}
-	if !downgradedBs.Has(10) || downgradedBs.Has(100) {
+	if !downgradedBs.Test(10) || downgradedBs.Test(100) {
 		t.Error("Downgraded set has incorrect bits")
 	}
 
 	// Test immutability during downgrade
-	if !largeBs.Has(100) {
+	if !largeBs.Test(100) {
 		t.Error("Original largeBitSet should not be modified during downgrade")
 	}
 }
 
 func TestLargeBitSet(t *testing.T) {
 	// Start with a large set
-	var bs Set = New().Add(100)
+	var bs Set = New().Set(100)
 
-	// Test immutability on Add
-	bs2 := bs.Add(200)
-	if bs.Has(200) {
-		t.Error("Original largeBitSet should not be modified after Add")
+	// Test immutability on Set
+	bs2 := bs.Set(200)
+	if bs.Test(200) {
+		t.Error("Original largeBitSet should not be modified after Set")
 	}
-	if !bs2.Has(100) || !bs2.Has(200) {
+	if !bs2.Test(100) || !bs2.Test(200) {
 		t.Error("New largeBitSet should have old and new bits")
 	}
 
-	// Test immutability on Remove
-	bs3 := bs2.Remove(100)
-	if !bs2.Has(100) {
-		t.Error("Original largeBitSet should not be modified after Remove")
+	// Test immutability on Clear
+	bs3 := bs2.Clear(100)
+	if !bs2.Test(100) {
+		t.Error("Original largeBitSet should not be modified after Clear")
 	}
-	if bs3.Has(100) || !bs3.Has(200) {
+	if bs3.Test(100) || !bs3.Test(200) {
 		t.Error("New largeBitSet should have correct bits after removal")
 	}
 }
 
 func TestLargeBitSetDowngrade(t *testing.T) {
 	// Create a set that will downgrade upon removal
-	bs := New().Add(5).Add(70)
+	bs := New().Set(5).Set(70)
 
-	if !bs.Has(5) || !bs.Has(70) {
+	if !bs.Test(5) || !bs.Test(70) {
 		t.Fatal("Initial set for downgrade test is incorrect")
 	}
 
-	// Remove the high bit, should cause a downgrade
-	downgradedBs := bs.Remove(70)
+	// Clear the high bit, should cause a downgrade
+	downgradedBs := bs.Clear(70)
 
 	if _, ok := downgradedBs.(bitSet64); !ok {
 		t.Fatalf("Set should have downgraded to bitSet64, but got %T", downgradedBs)
 	}
 
-	if !downgradedBs.Has(5) {
+	if !downgradedBs.Test(5) {
 		t.Error("Downgraded set is missing its bit")
 	}
-	if downgradedBs.Has(70) {
-		t.Error("Downgraded set should not have the removed bit")
+	if downgradedBs.Test(70) {
+		t.Error("Downgraded set should not have the cleared bit")
 	}
 
 	// Test downgrade to empty set
-	bsEmpty := New().Add(100).Remove(100)
+	bsEmpty := New().Set(100).Clear(100)
 	if _, ok := bsEmpty.(bitSet64); !ok {
 		t.Fatalf("Set should have downgraded to bitSet64, but got %T", bsEmpty)
 	}
-	if bsEmpty.Has(100) {
+	if bsEmpty.Test(100) {
 		t.Error("Set should be empty after removing its only high bit")
 	}
 	if bsEmpty.(bitSet64) != 0 {
@@ -156,7 +156,7 @@ func TestBitSetBuilder(t *testing.T) {
 		if _, ok := bs.(bitSet64); !ok {
 			t.Errorf("Expected bitSet64 from builder, got %T", bs)
 		}
-		if !bs.Has(5) || !bs.Has(10) {
+		if !bs.Test(5) || !bs.Test(10) {
 			t.Error("Built set from small builder has incorrect bits")
 		}
 	})
@@ -170,7 +170,7 @@ func TestBitSetBuilder(t *testing.T) {
 		}
 
 		bs := b.Build()
-		if !bs.Has(10) || !bs.Has(100) {
+		if !bs.Test(10) || !bs.Test(100) {
 			t.Error("Set built after builder upgrade has incorrect bits")
 		}
 		if _, ok := bs.(largeBitSet); !ok {
@@ -183,11 +183,11 @@ func TestBitSetBuilder(t *testing.T) {
 		b = b.With(2047).With(0)
 		bs := b.Build()
 
-		if !bs.Has(2047) || !bs.Has(0) {
+		if !bs.Test(2047) || !bs.Test(0) {
 			t.Error("Built set from large builder has incorrect bits")
 		}
-		if bs.Has(100) {
-			t.Error("Built set should not have bits that weren't added")
+		if bs.Test(100) {
+			t.Error("Built set should not have bits that weren't set")
 		}
 	})
 
@@ -199,24 +199,24 @@ func TestBitSetBuilder(t *testing.T) {
 		b = b.With(200)
 
 		bs := b.Build()
-		if !bs.Has(50) || !bs.Has(200) {
+		if !bs.Test(50) || !bs.Test(200) {
 			t.Error("Set built after builder growth has incorrect bits")
 		}
 	})
 }
 
-func TestLargeBitSetRemoveAndShrink(t *testing.T) {
+func TestLargeBitSetClearAndShrink(t *testing.T) {
 	// Create a set with gaps to test slice trimming
 	// bits will be {0, bit for 70, 0, bit for 200}
-	bs := New().Add(70).Add(200)
+	bs := New().Set(70).Set(200)
 
-	// Remove 200, which should shrink the backing slice
-	bs2 := bs.Remove(200)
+	// Clear 200, which should shrink the backing slice
+	bs2 := bs.Clear(200)
 
-	if !bs2.Has(70) {
+	if !bs2.Test(70) {
 		t.Error("Set should still have bit 70 after shrinking")
 	}
-	if bs2.Has(200) {
+	if bs2.Test(200) {
 		t.Error("Set should not have bit 200 after removal")
 	}
 
